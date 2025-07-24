@@ -1,108 +1,91 @@
 import utils from "./utils.js";
-import validarEstudiante from "./validarEstudiante.js";
-// array de estudiantes (base de datos)
+
+/* regex */
+const regexNombreYApellido = /^[A-Za-zÁÉÍÓÚáéíóúñÑ ]{2,}$/;
+
+/* "base de datos" */
 const estudiantesNombresCompletos = [
-  { nombre: "Rubén", apellido: "Moreno", notas: [9, 8, 9], promedio: 8.67 },
-  { nombre: "Víctor", apellido: "Espinosa", notas: [8, 6, 7], promedio: 7 },
+  { nombre: "Ruben", apellido: "Moreno", notas: [9, 8, 9], promedio: 8.67 },
+  { nombre: "Victor", apellido: "Espinosa", notas: [8, 6, 7], promedio: 7 },
   { nombre: "Nuria", apellido: "Figueroa", notas: [9, 8, 9], promedio: 8.67 },
-  { nombre: "Lucas", apellido: "Martínez", notas: [10, 9, 8], promedio: 9 },
-  { nombre: "Sofía", apellido: "Mendoza", notas: [10, 10, 10], promedio: 10 },
+  { nombre: "Lucas", apellido: "Martinez", notas: [10, 9, 8], promedio: 9 },
+  { nombre: "Sofia", apellido: "Mendoza", notas: [10, 10, 10], promedio: 10 }
 ];
 
-/* function validacionIngreso(mensaje, regex) {
-    let ingreso;
-    do {
-        ingreso = utils.prompt(mensaje);
-        if (!regex.test(ingreso)) {
-            console.log("Intenta nuevamennte");
-        }
-    } while (!regex.test(ingreso));
-    return ingreso
+/* funcino para capitalizar el nombre */
+function capitalizarNombre(str) {
+  return str
+  .toLowerCase()
+  .split(" ")
+  .map(nombre => nombre.charAt(0).toUpperCase() + nombre.slice(1))
+  .join(" ");
 }
- */
-
-//ingreso de hasta 3 veces y validacion (funcion validar estudiante)
-function ingresoIntentos(mensaje, validar, maxIntentos = 3) {
+/* funcion para ingreso */
+function ingresoConIntentos(mensaje, regex, maxIntentos = 3) {
   let intentos = 0;
   let entrada;
 
   while (intentos < maxIntentos) {
-    entrada = utils.prompt(mensaje);
-    try {
-      validar(entrada);
-      return entrada;
-    } catch (error) {
-      console.log(`${error.message}`);
-      intentos++;
-    }
+    entrada = utils.prompt(mensaje).trim();
+    if (regex.test(entrada)) return entrada;
+
+    console.log("Formato invalido. Prueba de nuevo");
+    intentos ++;
   }
 
-  throw new Error("Limite de intentos agotado");
+  throw new Error ("Limite de intentos alcanzdo")
 }
 
-/* 
-!!!FALTA VERIFICACION
-function editarNombreEstudiantes() {
-    const nombreActual = utils.prompt("Ingresa el nombre completo actual del estudiante: ");
-    //corrobor existe el etudiante?
-    const estudiante = estudiantesNombresCompletos.find(est => `${est.nombre} ${est.apellido}`.toLowerCase() === nombreActual.toLowerCase());
-    // mal ingresado
-    if (!estudiante) {
-        console.log("No existe el estduante.");
-        return;
-    }
-    //existe
-    const nuevoNombre = utils.prompt("Nuevo nombre: ");
-    const nuevoApellido = utils.prompt("Nuevo apellido: ");
-    //modificacion
-    estudiante.nombre = nuevoNombre;
-    estudiante.apellido = nuevoApellido;
-    
-    console.log(estudiante);
-    
-}
-*/
-
-function editarNombreEstudiantes() {
+/* funcion principal */
+function editarNombreEstudiante () {
   let estudiante;
-  let nombreActual;
 
-  //ingreso de estudiante y validacion
+  /* ingreso nombre y apellido actual con regex  */
+  let nombreActual, apellidoActual;
+
   try {
-    nombreActual = ingresoIntentos("Ingresa el nombre actual del estudiante: ", validarEstudiante);
-    //busqueda
-    estudiante = estudiantesNombresCompletos.find((est) => `${est.nombre} ${est.apellido}`.toLowerCase() === nombreActual.toLowerCase());
-    //FALTA : que me de mas de una oportunidad al ingresar un nombre que pasa la validacion pero que no existe(mejorar en funcion validar)
-    if (!estudiante) {
-      throw new Error ("No existe el estudiante");
-    }
+    nombreActual = ingresoConIntentos("INgresa el nombre actual: ", regexNombreYApellido);
+    apellidoActual = ingresoConIntentos("Ingresa el apellido actual: ", regexNombreYApellido);
+
+    /* por si ingresa alguna letra intermedia mayuscula */
+    nombreActual = capitalizarNombre(nombreActual);
+    apellidoActual = capitalizarNombre(apellidoActual);
+
+    /* busco el estudiante */
+    estudiante = estudiantesNombresCompletos.find (
+      (est) =>
+        est.nombre === nombreActual && est.apellido === apellidoActual
+    );
+    /* no lo encuentra entonces se corta(¿deberia dar mas oportunidades?)*/
+    if (!estudiante) throw new Error("NO existe el estudiante con ese nombre");
   } catch (error) {
-    console.log(`${error.message}`);
+    console.log(error.message);
     return;
   }
-  //guardo el nombre para mostrarloa l final ?
+
   const nombreAnterior = `${estudiante.nombre} ${estudiante.apellido}`;
-  //ingreso de nuevo nombre
-  let nuevoNombreCompleto;
+
+  /* ahora si paso todo puede ingresar el nombre nuevo  */
+  let nuevoNombre, nuevoApellido;
+
   try {
-    nuevoNombreCompleto = ingresoIntentos("Ingresa el nuevo nombre del estudiante: ", validarEstudiante);
+    nuevoNombre = ingresoConIntentos("Ingresa el nuevo nombre: ", regexNombreYApellido);
+    nuevoApellido = ingresoConIntentos("INgresa el nuevo apellido: ", regexNombreYApellido)
   } catch (error) {
-    console.log(`${error.message}`);
+    console.log(error.message);
     return;
   }
+  
+  /* actualizacion y capitalizar nombre */
+  estudiante.nombre = capitalizarNombre(nuevoNombre);
+  estudiante.apellido = capitalizarNombre(nuevoApellido);
 
-  //separar nombre completo para guardar cada valor en una variable distinta
-  const [nuevoNombre, ...apellidos] = nuevoNombreCompleto.split(" ");
-  const nuevoApellido = apellidos.join(" ");
-
-  //carga del nuevo nombre
-  //FALTA CAPITALIZAR POR SI EL INGRESO ES EN MINUSCULAS
-  estudiante.nombre = nuevoNombre;
-  estudiante.apellido = nuevoApellido;
-
-  console.log("Nombre actulizado");
-  console.log(`Nombre anterior: ${nombreAnterior}`);
-  console.log(`NOmbre nuevo: ${nuevoNombre} ${nuevoApellido}`);
+  /* muestro resultado */
+  console.log("Nombre actualizado corretamente");
+  console.log(`Anterior : ${capitalizarNombre(nombreAnterior)}`);
+  console.log(`Nuevo : ${estudiante.nombre} ${estudiante.apellido}`);
+  /* base de datos actualizada */
+  console.table(estudiantesNombresCompletos)
 }
 
-editarNombreEstudiantes();
+editarNombreEstudiante();
